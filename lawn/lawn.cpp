@@ -11,7 +11,7 @@ int main()
     int nx,ny;
     float w;
     float current;
-    for(int j = 0; j < 4; j++)
+    while(1)
     {
 LOOP:
         scanf("%d %d %f",&nx,&ny,&w);
@@ -34,7 +34,7 @@ LOOP:
         }
         sort(pointsx.begin(),pointsx.end());
         pointsx.push_back(75+w2);
-        current = -w2;;
+        current = -w2;
         for(auto t : pointsx)
         {
             if(w < t-current)
@@ -45,7 +45,7 @@ LOOP:
             current = t;
         }
         sort(pointsy.begin(),pointsy.end());
-        pointsy.push_back(100-w2);
+        pointsy.push_back(100+w2);
         current = -w2;
         for(auto t : pointsy)
         {
