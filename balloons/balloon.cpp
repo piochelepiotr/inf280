@@ -44,7 +44,7 @@ bool maximumRadius(deque<Point> & points)
     double minimum = rad3(points[0],points[1],points.back());
     if(minimum != -1)
     {
-        for(int i = 2; i < (int) points.size() - 3; i++)
+        for(int i = 2; i < (int) points.size() - 1; i++)
         {
             minimum = min(minimum,dist(points[i],points.back())-points[i].r);
             if(minimum < 0)
@@ -55,20 +55,21 @@ bool maximumRadius(deque<Point> & points)
     {
         return false;
     }
+    //printf("back : %f\n", minimum);
     points.back().r = minimum;
     return true;
 }
 
 double solve(deque<Point> & placed,deque<Point> remaining, double volume)
 {
-    printf("volume %f et rest : ",volume);
-    for(auto it : remaining)
-    {
-        printf("%d,",it.x);
-    }
-    printf("\n");
+    //printf("volume %f et rest : ",volume);
+    //for(auto it : remaining)
+    //{
+    //    printf("%d,",it.x);
+    //}
+    //printf("\n");
     double maximum = volume;
-    for(int i = 0; i < (int) remaining.size(); i ++)
+    for(int i = 0; i < (int) remaining.size(); i++)
     {
         placed.push_back(remaining.front());
         remaining.pop_front();
@@ -106,19 +107,18 @@ int main()
             else
                 remaining.push_back(p);
         }
-        for(auto it : remaining)
-        {
-            if(rad3(placed[0],placed[1],it) == -1)
-                printf("dehors\n");
-            else
-                printf("dedans\n");
-        }
-        printf("distance %f\n",dist(remaining[0],remaining[1]));
+        //for(auto it : remaining)
+        //{
+        //    if(rad3(placed[0],placed[1],it) == -1)
+        //        printf("dehors\n");
+        //    else
+        //        printf("dedans\n");
+        //}
+        //printf("distance %f\n",dist(remaining[0],remaining[1]));
         printf("Box %d: %d\n",boxNum,volume(placed[0],placed[1]) - (int) (round(solve(placed,remaining,0))));
         scanf("%d",&n);
         printf("\n");
         boxNum++;
     }while(n);
-    printf("\n");
     return 0;
 }
