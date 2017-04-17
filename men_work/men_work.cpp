@@ -11,49 +11,28 @@
 #define MAXLEN 100000000
 
 using namespace std;
-typedef pair<unsigned int,int> WeightNode;// weight goes first
 
-//he is at step-1 on the cell and wants to know how much time he can stay on it
-int maxStay(
-
-int timeToOpen(bool initialState,int delay,int step,bool initialStateStart,int delayStart)
+bool dispo(bool init,int delay,int step)
 {
     if(delay == 0)
     {
-        return (initialState) ? 0 : MAXLEN;
+        return init;
     }
-    //delay != 0
-    bool pair = ((int) (step/delay)) % 2 == 0;
-    if((pair && initialState) || (!pair && !initialState))
+    bool pair = (step/delay)%2 == 0;
+    if((pair && init) || (!pair && !init))
     {
-        return 0;
+        return true;
     }
     else
     {
-        //have to check that the cell on witch we are is free until the end
-        int steps = delay - (step % delay); //time it has to wait on the current cell
-        if(delayStart == 0)
-        {
-            if(initialStateStart)
-                return steps;
-            else
-                return MAXLEN;
-        }
-        //we know that during the previous step, it was OK, we look for the place of the change
-        for(int i = 0; i < steps; i++)
-        {
-            if((step+i)%delayStart == 0)
-                return MAXLEN;
-        }
-        return steps;
-        //if(steps <= (delayStart - (step % delayStart))%delayStart)
-        //    return steps;
-        return steps;
+        return false;
     }
 }
 
-void getAdj(int u, vector<int> & adj,int N)
+void voisins(int u, vector<int> & adj,int N)
 {
+    adj.clear();
+    adj.push_back(u);
     int line = u / N;
     int column = u % N;
     if(line > 0)
@@ -74,37 +53,48 @@ void getAdj(int u, vector<int> & adj,int N)
     }
 }
 
-/*Modified version of Djikstra from the course*/
-int Dijkstra(bool *starts,int *delay,int N)
+void nextStep(bool *cells,int N,bool *newCells, bool *start, int *delay,int step)
 {
-    int root = 0;
-    unsigned int *Dist = new unsigned int[N*N];
-    priority_queue<WeightNode, std::vector<WeightNode>,std::greater<WeightNode> > Q;
-    fill_n(Dist, N*N, MAXLEN);
-    Dist[root] = 0;
-    Q.push(make_pair(0, root));
-    while(!Q.empty())
+    vector<int>nexts;
+    for(int i = 0; i < N*N; i++)
     {
-        int u = Q.top().second;
-        cout << "sommet : " << u << endl;
-        // get node with least priority
-        Q.pop();
-        vector<int>adj;
-        getAdj(u,adj,N);
-        for(auto tmp : adj)
+        newCells[i] = false;
+    }
+    for(int i = 0; i < N*N; i++)
+    {
+        if(cells[i])
         {
-            int v = tmp;
-            unsigned int weight = 1 + timeToOpen(starts[v],delay[v],Dist[u]+1,starts[u],delay[u]);
-            if(Dist[v] > Dist[u] + weight)
+            voisins(i,nexts,N);
+            for(auto j : nexts)
             {
-                // shorter path found?
-                Dist[v] = Dist[u] + weight;
-                Q.push(make_pair(Dist[v], v));
-                // simply push, no update here
+                if(dispo(start[j],delay[j],step+1))
+                {
+                    newCells[j] = true;
+                }
             }
         }
     }
-    return Dist[N*N-1];
+}
+
+int findMin(bool *start,int *delay,int N)
+{
+    bool *cells = new bool[N*N];
+    bool *newCells = new bool[N*N];
+    for(int i =0; i < N*N; i++)
+    {
+        cells[i] = false;
+    }
+    cells[0] = true;
+    for(int step = 0; step < N*N; step++)
+    {
+        nextStep(cells,N,newCells,start,delay,step);
+        bool *s = cells;
+        cells = newCells;
+        newCells = s;
+        if(cells[N*N-1])
+            return step + 1;
+    }
+    return -1;
 }
 
 int main()
@@ -143,8 +133,8 @@ int main()
                     delays[i*N+j] = c - '0';
             }
         }
-        int min = Dijkstra(start_opened,delays,N);
-        if(min == MAXLEN)
+        int min = findMin(start_opened,delays,N);
+        if(min == -1)
             cout << "NO";
         else
             cout << min;

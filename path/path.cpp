@@ -13,88 +13,85 @@
 using namespace std;
 typedef pair<unsigned int,int> WeightNode;// weight goes first
 
-//he is at step-1 on the cell and wants to know how much time he can stay on it
-int maxStay(
-
-int timeToOpen(bool initialState,int delay,int step,bool initialStateStart,int delayStart)
+void remove(vector<pair<int,int>> &adj,int ind)
 {
-    if(delay == 0)
+    for(int i = 0; i < (int) adj.size(); i++)
     {
-        return (initialState) ? 0 : MAXLEN;
-    }
-    //delay != 0
-    bool pair = ((int) (step/delay)) % 2 == 0;
-    if((pair && initialState) || (!pair && !initialState))
-    {
-        return 0;
-    }
-    else
-    {
-        //have to check that the cell on witch we are is free until the end
-        int steps = delay - (step % delay); //time it has to wait on the current cell
-        if(delayStart == 0)
+        if(adj[i].first == ind)
         {
-            if(initialStateStart)
-                return steps;
-            else
-                return MAXLEN;
+            adj.erase(adj.begin()+i);
         }
-        //we know that during the previous step, it was OK, we look for the place of the change
-        for(int i = 0; i < steps; i++)
-        {
-            if((step+i)%delayStart == 0)
-                return MAXLEN;
-        }
-        return steps;
-        //if(steps <= (delayStart - (step % delayStart))%delayStart)
-        //    return steps;
-        return steps;
-    }
-}
-
-void getAdj(int u, vector<int> & adj,int N)
-{
-    int line = u / N;
-    int column = u % N;
-    if(line > 0)
-    {
-        adj.push_back((line-1)*N+(column));
-    }
-    if(line < N-1)
-    {
-        adj.push_back((line+1)*N+(column));
-    }
-    if(column > 0)
-    {
-        adj.push_back((line)*N+(column-1));
-    }
-    if(column < N-1)
-    {
-        adj.push_back((line)*N+(column+1));
     }
 }
 
 /*Modified version of Djikstra from the course*/
-int Dijkstra(bool *starts,int *delay,int N)
+int Dijkstra(vector<pair<int,int>> *adj,int N, int root, int D)
 {
-    int root = 0;
-    unsigned int *Dist = new unsigned int[N*N];
+    vector<int> *prev = new vector<int>[N];
+    unsigned int *Dist = new unsigned int[N];
     priority_queue<WeightNode, std::vector<WeightNode>,std::greater<WeightNode> > Q;
-    fill_n(Dist, N*N, MAXLEN);
+    fill_n(Dist, N, MAXLEN);
     Dist[root] = 0;
     Q.push(make_pair(0, root));
     while(!Q.empty())
     {
         int u = Q.top().second;
-        cout << "sommet : " << u << endl;
         // get node with least priority
         Q.pop();
-        vector<int>adj;
-        getAdj(u,adj,N);
-        for(auto tmp : adj)
+        for(auto tmp : adj[u])
         {
-            int v = tmp;
-            unsigned int weight = 1 + timeToOpen(starts[v],delay[v],Dist[u]+1,starts[u],delay[u]);
+            int v = tmp.first;
+            unsigned int weight = tmp.second;
+            if(Dist[v] > Dist[u] + weight)
+            {
+                prev[v].clear();
+                prev[v].push_back(u);
+                // shorter path found?
+                Dist[v] = Dist[u] + weight;
+                Q.push(make_pair(Dist[v], v));
+                // simply push, no update here
+            }
+            else if(Dist[v] == Dist[u] + weight)
+            {
+                prev[v].push_back(u);
+            }
+        }
+    }
+    bool *visited = new bool[N];
+    for(int i = 0; i < N; i++)
+    {
+        visited[i] = false;
+    }
+    deque<int>remaining;
+    remaining.push_back(D);
+    while(!remaining.empty())
+    {
+        int s = remaining.front();
+        remaining.pop_front();
+        if(!visited[s])
+        {
+            visited[s] = true;
+            for(auto vert : prev[s])
+            {
+                remove(adj[vert],s);
+                remaining.push_back(vert);
+            }
+        }
+    }
+    //now, path without the shortests paths
+    fill_n(Dist, N, MAXLEN);
+    Dist[root] = 0;
+    //Q is empty
+    Q.push(make_pair(0, root));
+    while(!Q.empty())
+    {
+        int u = Q.top().second;
+        // get node with least priority
+        Q.pop();
+        for(auto tmp : adj[u])
+        {
+            int v = tmp.first;
+            unsigned int weight = tmp.second;
             if(Dist[v] > Dist[u] + weight)
             {
                 // shorter path found?
@@ -104,48 +101,35 @@ int Dijkstra(bool *starts,int *delay,int N)
             }
         }
     }
-    return Dist[N*N-1];
+
+    return Dist[D];
 }
 
 int main()
 {
-    int N;
+    int N,M;
+    int S,D;
     int n = 0;
-    char c;
+    int a,b,w;
     while(1)
     {
-        N = -1;
-        cin >> N;
-        if(N == -1)
+        cin >> N >> M;
+        if(N == 0 && M == 0)
         {
             break;
         }
-        else if(n != 0)
-        {
-            cout << endl;
-        }
+        cin >> S >> D;
         n++;
-        bool *start_opened = new bool[N*N];
-        int *delays  = new int[N*N];
-        for(int i = 0; i < N; i++)
+        vector<pair<int,int>> *adj = new vector<pair<int,int>>[N];
+
+        for(int i = 0; i < M; i++)
         {
-            for(int j = 0; j < N; j++)
-            {
-                cin >> c;
-                start_opened[i*N+j] = (c == '.');
-            }
+            cin >> a >> b >> w;
+            adj[a].push_back(make_pair(b,w));
         }
-        for(int i = 0; i < N; i++)
-        {
-            for(int j=0; j < N; j++)
-            {
-                    cin >> c;
-                    delays[i*N+j] = c - '0';
-            }
-        }
-        int min = Dijkstra(start_opened,delays,N);
+        int min = Dijkstra(adj,N,S,D);
         if(min == MAXLEN)
-            cout << "NO";
+            cout << "-1";
         else
             cout << min;
         cout << endl;
