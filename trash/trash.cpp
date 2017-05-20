@@ -6,7 +6,7 @@
 
 #define ZERO 0.000000001
 #define INF 1000000000000
-#define STEP 0.1
+#define STEP 0.001
 
 using namespace std;
 
@@ -37,28 +37,32 @@ double distToPoint(point const& center, double rotAngle,point const& p)
 {
     double angle = computeAngle(center,p)-rotAngle;
     double R = sqrt(pow(p.x-center.x,2) + pow(p.y - center.y,2));
-    return fabs(R*sin(angle));
+    return R*sin(angle);
 }
 
 double solve(point *points,int n)
 {
     double min = INF;
-    for(int i = 0; i < n; i++)
+    for(double rotAngle = 0; rotAngle < M_PI; rotAngle += STEP)
     {
-        int j = i+1%n;
-        double max = 0;
-        double rotAngle = computeAngle(points[i],points[j]);
+        double maxUp = 0;
+        double maxDown = 0;
         for(int k = 0; k < n; k++)
         {
-            if(k != i && k != j)
+            if(k != 0)
             {
-                double dist = distToPoint(points[i], rotAngle, points[k]);
-                if(dist > max)
+                double dist = distToPoint(points[0], rotAngle, points[k]);
+                if(dist > maxUp)
                 {
-                    max = dist;
+                    maxUp = dist;
+                }
+                else if(dist < maxDown)
+                {
+                    maxDown = dist;
                 }
             }
         }
+        double max = maxUp - maxDown;
         if(max < min)
         {
             min = max;
